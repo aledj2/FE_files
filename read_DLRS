@@ -1,0 +1,143 @@
+'''
+Created on 10 Nov 2016
+@author: ajones7
+'''
+import os
+
+class read_DLRS():
+    def __init__(self):
+        #  file containing list of arrays to import
+        
+        self.arrays_to_find='S:\\Genetics_Data2\\Array\\Audits and Projects\\161021 PGD QC data\\read_DLRS\\list_of_arrays_to_find.txt'
+        
+        # empty array for list of filenames to add
+        self.filename_string={}
+        
+        # path to FE files
+        self.FE_file_path="S:\\Genetics_Data2\\Array\\FeatureExtraction\\eve\\output"
+        #list of all files in dir 
+        self.list_of_fefiles=[]
+        
+        #list of fe files to read
+        self.readme=[]
+        
+        #dict to hold DLRS
+        self.DLRS_dict={}
+        
+        #output file
+        #self.output_file=open('S:\\Genetics_Data2\\Array\\Audits and Projects\\161021 PGD QC data\\read_DLRS\\list_of_DLRS.txt','w')
+
+    def read_filelist(self):
+        # read through the list of arrays to find, and convert to barcode and array coordinate to allow the filename to be recontructed
+        arrays=open(self.arrays_to_find,'r')
+        for line in arrays:
+            splitline=line.split('\t')
+            cy5=splitline[0]
+            subarray=splitline[1]
+            # convert the subarray number into the file name. convert into a integer. 
+            if int(subarray) == 1:
+                #assign to arraycoord the desired end to the filename. use ? as wildcard character
+                arraycoord="2_1_1"
+            elif int(subarray) == 2:
+                arraycoord="2_1_2"
+            elif int(subarray) == 3:
+                arraycoord="2_1_3"
+            elif int(subarray) == 4:
+                arraycoord="2_1_4"
+            elif int(subarray) == 5:
+                arraycoord="2_2_1"
+            elif int(subarray) == 6:
+                arraycoord="2_2_2"
+            elif int(subarray) == 7:
+                arraycoord="2_2_3"
+            elif int(subarray) == 8:
+                arraycoord="2_2_4"
+            else:
+                print "error in subarray"
+            
+            #capture the filename search term and append to dict
+            to_find="252846913070_2_2_1_cy5_"+cy5+"_"+arraycoord+"_cy"
+            self.filename_string[line]=to_find
+        print str(len(self.filename_string))+" pairs of embryos to find"
+        arrays.close()
+        #print self.filename_string
+    
+    def read_all_fe_files(self):
+        #loop through fe files in the eve output folder
+        for file in os.listdir(self.FE_file_path):
+            self.list_of_fefiles.append(file)
+        #print len(self.list_of_fefiles)
+        
+    def read_DLRS(self):
+        # loop through list of file to find and see if they are in the eve output folder 
+        for i in self.filename_string:
+            for file in self.list_of_fefiles:
+                if self.filename_string[i] in file:
+                    #capture the path to the fe file
+                    self.readme.append(self.FE_file_path+"\\"+file)
+                    
+        print str(len(self.readme))+" eve outputs to read"
+        
+        # loop through the list of paths to fe files and capture the DLRS
+        for file in self.readme:
+            open_FE=open(file,'r')
+            for i, line in enumerate(open_FE):
+                if i==6:
+                    splitline=line.split("\t")
+                    DLRS=splitline[118]
+                    self.DLRS_dict[file.replace(self.FE_file_path+"\\","")]=DLRS
+            open_FE.close()
+        
+        # reopen the list of arrays to find        
+        arrays=open(self.arrays_to_find,'r')
+        #write header in output file
+        #self.output_file.write("#cy5 barcode\tsubarray\tcy3_DLRS\tcy5_DLRS\n")
+        #loop through file of fe files to capture, re creating barcode and subarray
+        for line in arrays:
+            splitline=line.split('\t')
+            cy5=splitline[0]
+            subarray=splitline[1]
+            # convert the subarray number into the file name. convert into a integer. 
+            if int(subarray) == 1:
+                #assign to arraycoord the desired end to the filename. use ? as wildcard character
+                arraycoord="2_1_1"
+            elif int(subarray) == 2:
+                arraycoord="2_1_2"
+            elif int(subarray) == 3:
+                arraycoord="2_1_3"
+            elif int(subarray) == 4:
+                arraycoord="2_1_4"
+            elif int(subarray) == 5:
+                arraycoord="2_2_1"
+            elif int(subarray) == 6:
+                arraycoord="2_2_2"
+            elif int(subarray) == 7:
+                arraycoord="2_2_3"
+            elif int(subarray) == 8:
+                arraycoord="2_2_4"
+            else:
+                print "error in subarray"
+            
+            #set cy3 and cy5 dlrs
+            cy3_DLRS="NA"
+            cy5_DLRS="NA"
+            
+            # recreate the string for cy3 array and pull the dlrs out of dict
+            if "252846913070_2_2_1_cy5_"+cy5+"_"+arraycoord+"_cy3.txt" in self.DLRS_dict:
+                #print "match"
+                #print "252846913070_2_2_1_cy5_"+cy5+"_"+arraycoord+"_cy3.txt"
+                #print self.DLRS_dict["252846913070_2_2_1_cy5_"+cy5+"_"+arraycoord+"_cy3.txt"]
+                cy3_DLRS=self.DLRS_dict["252846913070_2_2_1_cy5_"+cy5+"_"+arraycoord+"_cy3.txt"]
+            #repeat for cy5
+            if "252846913070_2_2_1_cy5_"+cy5+"_"+arraycoord+"_cy5.txt" in self.DLRS_dict:
+                cy5_DLRS=self.DLRS_dict["252846913070_2_2_1_cy5_"+cy5+"_"+arraycoord+"_cy5.txt"]
+            #write line to output file
+            #self.output_file.write(cy5+"\t"+subarray.rstrip()+"\t"+cy3_DLRS+"\t"+cy5_DLRS+"\n")
+        arrays.close()
+        print "done"    
+                    
+if __name__ == "__main__":
+    a=read_DLRS()
+    a.read_filelist()
+    a.read_all_fe_files()
+    a.read_DLRS()
